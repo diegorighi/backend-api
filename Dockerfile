@@ -22,4 +22,4 @@ EXPOSE $SPRINGBOOT_PORT
 COPY target/agencia-crm-0.0.1-SNAPSHOT.jar /app/
 
 # Define o comando padrão a ser executado quando o contêiner for iniciado
-CMD ["java", "-jar", "agencia-crm-0.0.1-SNAPSHOT.jar"]
+CMD ["java", "-jar", "/app/agencia-crm-0.0.1-SNAPSHOT.jar"]
