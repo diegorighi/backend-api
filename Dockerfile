@@ -19,7 +19,7 @@ ENV SECRET_TOKEN=$SECRET_TOKEN
 EXPOSE $SPRINGBOOT_PORT
 
 # Copia o arquivo JAR da aplicação para o diretório de trabalho dentro do contêiner
-COPY target/agencia-crm-0.0.1-SNAPSHOT.jar /app/
+COPY target/agencia-crm-0.0.1-SNAPSHOT.jar .
 
 # Define o comando padrão a ser executado quando o contêiner for iniciado
-CMD ["java", "-jar", "/app/agencia-crm-0.0.1-SNAPSHOT.jar"]
+CMD ["java", "-jar", "agencia-crm-0.0.1-SNAPSHOT.jar"]
