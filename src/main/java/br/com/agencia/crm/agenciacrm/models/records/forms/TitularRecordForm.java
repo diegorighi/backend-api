@@ -1,7 +1,5 @@
 package br.com.agencia.crm.agenciacrm.models.records.forms;
 
-import java.util.UUID;
-
 import org.hibernate.validator.constraints.br.CPF;
 import org.springframework.data.mongodb.core.mapping.Unwrapped.Empty;
 

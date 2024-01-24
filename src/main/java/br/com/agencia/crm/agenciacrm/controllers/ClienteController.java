@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -28,11 +29,14 @@ import br.com.agencia.crm.agenciacrm.models.records.forms.DependenteEditRecordFo
 import br.com.agencia.crm.agenciacrm.models.records.forms.DependenteRecordForm;
 import br.com.agencia.crm.agenciacrm.models.records.forms.TitularEditRecordForm;
 import br.com.agencia.crm.agenciacrm.models.records.forms.TitularRecordForm;
+import br.com.agencia.crm.agenciacrm.models.wrapper.PayloadRequestLogWrapper;
 import br.com.agencia.crm.agenciacrm.models.wrapper.ResponseWrapper;
 import br.com.agencia.crm.agenciacrm.services.ClienteService;
 import br.com.agencia.crm.agenciacrm.utils.ClienteUtils;
 import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @RestController
 @RequestMapping("/cliente")
 public class ClienteController {
@@ -46,8 +50,14 @@ public class ClienteController {
 
     @PostMapping("/cadastrar")
     public ResponseEntity<ResponseWrapper<TitularRecordDTO>> cadastrarCliente(
+            @RequestHeader(value = "x-trid", required = true) String xtrid,
             @RequestBody @Valid TitularRecordForm form) {
-        Optional<Cliente> cliente = service.cadastroProcesso(form);
+                
+
+        PayloadRequestLogWrapper payload = new PayloadRequestLogWrapper(xtrid, form);     
+        
+        log.info("{} - Iniciando processo de [CADASTRO DE CLIENTE]: {}", xtrid, form.primeiroNome() + " " + form.sobrenome());
+        Optional<Cliente> cliente = service.cadastroProcesso(payload, form);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(
                 new ResponseWrapper<TitularRecordDTO>(
@@ -62,6 +72,7 @@ public class ClienteController {
             @RequestParam(value = "pagina", defaultValue = "0") int pagina,
             @RequestParam(value = "tamanho", defaultValue = "50") int tamanho) {
 
+        log.info("Listando clientes");
         PageRequest pageRequest = PageRequest.of(pagina, tamanho, Sort.Direction.ASC, "nome");
         Page<TitularEntity> listaClientes = service.listarClientes(pageRequest);
 
@@ -71,14 +82,24 @@ public class ClienteController {
 
     @GetMapping("/{cpf}")
     public ResponseEntity<ClienteDTO> buscarCliente(@PathVariable String cpf) {
+
+        log.info("Buscando cliente pelo cpf: {}", cpf);
         ClienteDTO cliente = service.buscarPorCPF(cpf);
+
         return ResponseEntity.status(200).body(cliente);
     }
 
     @PostMapping("/dependente/incluir")
-    public ResponseEntity<ResponseWrapper<DependenteRecordDTO>> incluirDependente(@RequestBody @Valid DependenteRecordForm form) {
-        DependenteRecordDTO dependente = service.incluirDependente(form);
-        System.out.println(dependente);
+    public ResponseEntity<ResponseWrapper<DependenteRecordDTO>> incluirDependente(
+        @RequestHeader(value = "x-trid", required = true) String xtrid,
+        @RequestBody @Valid DependenteRecordForm form) {
+       
+        PayloadRequestLogWrapper payload = new PayloadRequestLogWrapper(xtrid, form);
+
+        log.info("{} - Iniciando processo de [INCLUSÃO DE DEPENDENTE]: {}", 
+                xtrid, form.primeiroNome() + " " + form.sobrenome());
+
+        DependenteRecordDTO dependente = service.incluirDependente(payload, form);
         return ResponseEntity.status(HttpStatus.CREATED).body(
                 new ResponseWrapper<DependenteRecordDTO>(
                         dependente,
@@ -88,10 +109,14 @@ public class ClienteController {
 
     @PatchMapping("/editar/titular/{cpf}")
     public ResponseEntity<ResponseWrapper<HashMap<String, Object>>> editarTitular(
+            @RequestHeader(value = "x-trid", required = true) String xtrid,
             @PathVariable String cpf,
             @RequestBody TitularEditRecordForm formEdit) {
 
-        HashMap<String, Object> alteracoes = service.editarTitular(cpf, formEdit);
+        PayloadRequestLogWrapper payload = new PayloadRequestLogWrapper(xtrid, formEdit);
+        log.info("{} - Iniciando processo de [EDIÇÃO DO TITULAR]: {}", xtrid, cpf);
+
+        HashMap<String, Object> alteracoes = service.editarTitular(payload, cpf, formEdit);
 
         return ResponseEntity.ok(
                 new ResponseWrapper<HashMap<String, Object>>(
@@ -102,6 +127,8 @@ public class ClienteController {
 
     @DeleteMapping("/excluir/{cpf}")
     public ResponseEntity<ResponseWrapper<String>> excluirCliente(@PathVariable String cpf) {
+
+        log.info("Removendo cliente pelo cpf: {}", cpf);
         Boolean clienteRemovido = service.removerCliente(cpf);
 
         return ResponseEntity.status(204).body(new ResponseWrapper<String>(
@@ -113,10 +140,13 @@ public class ClienteController {
     // Editar dependente
     @PatchMapping("/dependente/editar/{cpfDependente}")
     public ResponseEntity<ResponseWrapper<HashMap<String, Object>>> editarDependente(
+            @RequestHeader(value = "x-trid", required = true) String xtrid,
             @PathVariable String cpfDependente,
             @RequestBody final DependenteEditRecordForm formEdit) {
 
-        HashMap<String, Object> alteracoes = service.editarDependente(cpfDependente, formEdit);
+        PayloadRequestLogWrapper payload = new PayloadRequestLogWrapper(xtrid, formEdit);
+        log.info("{} - Inciando processo de [EDIÇÃO DE DEPENDENTE]: {}", xtrid, cpfDependente);
+        HashMap<String, Object> alteracoes = service.editarDependente(payload, cpfDependente, formEdit);
 
         return ResponseEntity.ok(
                 new ResponseWrapper<HashMap<String, Object>>(
