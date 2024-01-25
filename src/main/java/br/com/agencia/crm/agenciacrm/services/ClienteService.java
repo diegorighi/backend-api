@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -28,7 +29,6 @@ import br.com.agencia.crm.agenciacrm.models.records.forms.DependenteEditRecordFo
 import br.com.agencia.crm.agenciacrm.models.records.forms.DependenteRecordForm;
 import br.com.agencia.crm.agenciacrm.models.records.forms.TitularEditRecordForm;
 import br.com.agencia.crm.agenciacrm.models.records.forms.TitularRecordForm;
-import br.com.agencia.crm.agenciacrm.models.wrapper.PayloadRequestLogWrapper;
 import br.com.agencia.crm.agenciacrm.repositories.ClienteRepository;
 import br.com.agencia.crm.agenciacrm.repositories.DependenteClienteRepository;
 import br.com.agencia.crm.agenciacrm.utils.ClienteUtils;
@@ -48,8 +48,6 @@ public class ClienteService {
     private ClienteRepository<TitularEntity> titularRepository;
     @Autowired
     private DependenteClienteRepository dependenteRepository;
-    @Autowired
-    private LogService logService;
 
     private static String CLIENTE_JA_CADASTRADO;
 
@@ -75,19 +73,28 @@ public class ClienteService {
 
     private static String GENERIC_DEPENDENTE_NAO_LOCALIZADO;
 
+    private static String GENERIC_CLIENTE_NAO_ENCONTRADO;
+
+    private static String TITULAR_REMOVER;
+
+    private static String DEPENDENTE_REMOVER;
+
     @Autowired
     public ClienteService(@Value("${cliente.ja.cadastrado}") String clienteJaCadastrado,
-                          @Value("${cliente.cadastrado.titular}") String clienteCadastradoTitular,
-                          @Value("${cliente.cadastrado.dependente}") String clienteCadastradoDependente,
-                          @Value("${dependente.ja.cadastrado}") String dependenteJaCadastrado,
-                          @Value("${dependente.cadastrado.sucesso}") String dependenteCadastradoSucesso,
-                          @Value("${dependente.alterado.sucesso}") String dependenteAlteradoSucesso,
-                          @Value("${titular.nao.encontrado}") String titularNaoEncontrado,
-                          @Value("${titular.atualizado.sucesso}") String titularAtualizadoSucesso,
-                          @Value("${generic.sem.alteracoes}") String genericSemAlteracoes,
-                          @Value("${generic.alteracoes.identificadas}") String genericAlteracoesIdentificadas,
-                          @Value("${generic.dependente.localizado}") String genericDependenteLocalizado,
-                          @Value("${generic.dependente.nao.localizado}") String genericDependenteNaoLocalizado
+                    @Value("${cliente.cadastrado.titular}") String clienteCadastradoTitular,
+                    @Value("${cliente.cadastrado.dependente}") String clienteCadastradoDependente,
+                    @Value("${dependente.ja.cadastrado}") String dependenteJaCadastrado,
+                    @Value("${dependente.cadastrado.sucesso}") String dependenteCadastradoSucesso,
+                    @Value("${dependente.alterado.sucesso}") String dependenteAlteradoSucesso,
+                    @Value("${titular.nao.encontrado}") String titularNaoEncontrado,
+                    @Value("${titular.atualizado.sucesso}") String titularAtualizadoSucesso,
+                    @Value("${generic.sem.alteracoes}") String genericSemAlteracoes,
+                    @Value("${generic.alteracoes.identificadas}") String genericAlteracoesIdentificadas,
+                    @Value("${generic.dependente.localizado}") String genericDependenteLocalizado,
+                    @Value("${generic.dependente.nao.localizado}") String genericDependenteNaoLocalizado,
+                    @Value("${generic.cliente.nao.encontrado}") String genericClienteNaoEncontrado,
+                    @Value("${titular.remover}") String titularRemover,
+                    @Value("${dependente.remover}") String dependenteRemover
      ) {
         ClienteService.CLIENTE_JA_CADASTRADO = clienteJaCadastrado;
         ClienteService.CLIENTE_CADASTRADO_TITULAR = clienteCadastradoTitular;
@@ -101,17 +108,23 @@ public class ClienteService {
         ClienteService.GENERIC_ALTERACOES_IDENTIFICADAS = genericAlteracoesIdentificadas;
         ClienteService.GENERIC_DEPENDENTE_LOCALIZADO = genericDependenteLocalizado;
         ClienteService.GENERIC_DEPENDENTE_NAO_LOCALIZADO = genericDependenteNaoLocalizado;
+        ClienteService.GENERIC_CLIENTE_NAO_ENCONTRADO = genericClienteNaoEncontrado;
+        ClienteService.TITULAR_REMOVER = titularRemover;
+        ClienteService.DEPENDENTE_REMOVER = dependenteRemover;
     } 
 
     @Transactional
-    public Optional<Cliente> cadastroProcesso(PayloadRequestLogWrapper payload, ClienteForm form) {
+    public Optional<Cliente> cadastroProcesso(String xtrid, ClienteForm form) {
         // Verifica se cliente já existe na base
         if (existeCliente(form.getCpf())){
-            logService.registrarInput(payload.getXtrid(), payload, Boolean.FALSE, CLIENTE_JA_CADASTRADO);
+            log.warn("x-trid: {} | Camada de Servico | cadastroProcesso | Sucesso: {} | Causa: {} |", 
+                    xtrid, 
+                    Boolean.FALSE,
+                    CLIENTE_JA_CADASTRADO);
             throw new ClienteJaCadastradoException(CLIENTE_JA_CADASTRADO);
         }
         else
-            return Optional.of(cadastro(payload, form));
+            return Optional.of(cadastro(xtrid, form));
     }
 
     /**
@@ -120,7 +133,7 @@ public class ClienteService {
      * @param cpf do cliente
      * @return true se cliente já existe, false se não existe
      */
-    public Boolean existeCliente(String cpf) {
+    private Boolean existeCliente(String cpf) {
         Optional<TitularEntity> titular = titularRepository.findByDocumentos_Cpf(cpf);
         Optional<DependenteEntity> dependente = dependenteRepository.findByDocumentos_Cpf(cpf);
 
@@ -136,19 +149,24 @@ public class ClienteService {
      * @param form cliente a ser cadastrado
      * @return mongoEntity salvo
      */
-    private Cliente cadastro(PayloadRequestLogWrapper payload, ClienteForm form) {
+    private Cliente cadastro(String xtrid, ClienteForm form) {
 
         if (form.parent_id() == null) {
-            log.info(CLIENTE_CADASTRADO_TITULAR);
             TitularEntity titular = ClienteUtils.titularFormToEntity((TitularRecordForm) form);
 
-            logService.registrarInput(payload.getXtrid(), payload, Boolean.TRUE, CLIENTE_CADASTRADO_TITULAR);
+            log.info("x-trid: {} | Camada de Servico | cadastro | Sucesso: {} | Causa: {} |", 
+                    xtrid, 
+                    Boolean.TRUE,
+                    CLIENTE_CADASTRADO_TITULAR);
+
             return titularRepository.save(titular);
         } else {
-            log.info(CLIENTE_CADASTRADO_DEPENDENTE);
             DependenteEntity dependente = ClienteUtils.dependenteFormToEntity((DependenteRecordForm) form);
+            log.info("x-trid: {} | Camada de Servico | cadastro | Sucesso: {} | Causa: {} |", 
+                    xtrid, 
+                    Boolean.TRUE,
+                    CLIENTE_CADASTRADO_DEPENDENTE);
 
-            logService.registrarInput(payload.getXtrid(), payload, Boolean.TRUE, CLIENTE_CADASTRADO_DEPENDENTE);
             return dependenteRepository.save(dependente);
         }
 
@@ -179,11 +197,12 @@ public class ClienteService {
                 return dependenteDTO;
             }
         } else
-            throw new ClienteNaoEncontradoException("Cliente não encontrado!");
+            throw new ClienteNaoEncontradoException(GENERIC_CLIENTE_NAO_ENCONTRADO);
     }
 
     @Transactional
-    public HashMap<String, Object> editarTitular(PayloadRequestLogWrapper payload, String cpf, TitularEditRecordForm formEdit) {
+    @CacheEvict(value = "cliente", key = "#cpf")
+    public HashMap<String, Object> editarTitular(String xtrid, String cpf, TitularEditRecordForm formEdit) {
         // Busca o titular na base
         Optional<TitularEntity> titular = titularRepository.findByDocumentos_Cpf(cpf);
 
@@ -221,16 +240,24 @@ public class ClienteService {
 
                         titularRepository.save(titularValue);
                         
-                        logService.registrarInput(payload.getXtrid(), payload, Boolean.TRUE, TITULAR_ATUALIZADO_SUCESSO);
-                        log.info(TITULAR_ATUALIZADO_SUCESSO);
+                        log.info("x-trid: {} | Camada de Servico | editarTitular | Sucesso: {} | Causa: {} |", 
+                            xtrid, 
+                            Boolean.TRUE,
+                            TITULAR_ATUALIZADO_SUCESSO);
                     } else{
-                        logService.registrarInput(payload.getXtrid(), payload, Boolean.FALSE, GENERIC_SEM_ALTERACOES);
+                        log.warn("x-trid: {} | Camada de Servico | editarTitular | Sucesso: {} | Causa: {} |", 
+                            xtrid, 
+                            Boolean.FALSE,
+                            GENERIC_SEM_ALTERACOES);
                         throw new ClienteJaCadastradoException(GENERIC_SEM_ALTERACOES);
 
                     }
                 },
                 () -> {
-                    logService.registrarInput(payload.getXtrid(), payload, Boolean.FALSE, TITULAR_NAO_ENCONTRADO);
+                    log.warn("x-trid: {} | Camada de Servico | editarTitular | Sucesso: {} | Causa: {} |", 
+                        xtrid, 
+                        Boolean.FALSE,
+                        TITULAR_NAO_ENCONTRADO);
                     throw new ClienteNaoEncontradoException(TITULAR_NAO_ENCONTRADO);
                 });
 
@@ -239,7 +266,8 @@ public class ClienteService {
     }
 
     @Transactional
-    public HashMap<String, Object> editarDependente(PayloadRequestLogWrapper payload, String cpfDependente, DependenteEditRecordForm formEdit) {
+    @CacheEvict(value = "cliente", key = "#cpfDependente")
+    public HashMap<String, Object> editarDependente(String xtrid, String cpfDependente, DependenteEditRecordForm formEdit) {
         // Busca o dependente na base
         Optional<DependenteEntity> dependente = dependenteRepository.findByDocumentos_Cpf(cpfDependente);
         
@@ -248,15 +276,12 @@ public class ClienteService {
         
         // Verifica se o dependente existe
         dependente.ifPresentOrElse(dependenteValue -> {
-            log.info("X-TRID: {} - ", payload.getXtrid(), GENERIC_DEPENDENTE_LOCALIZADO);
-
+            
             // Verifica se existem alterações
             alteracoesMap.putAll(existemAlteracoesDependente(formEdit, dependenteValue, new HashMap<String, Object>()));
 
             // Se existirem alterações, atualiza o dependente e o titular
             if (!alteracoesMap.isEmpty()) {
-                log.info("X-TRID: {} - ", payload.getXtrid(), GENERIC_ALTERACOES_IDENTIFICADAS);
-
                 dependenteValue.getDadosPessoais().setPrimeiroNome(formEdit.primeiroNome());
                 dependenteValue.getDadosPessoais().setNomeDoMeio(formEdit.nomeDoMeio());
                 dependenteValue.getDadosPessoais().setSobrenome(formEdit.sobrenome());
@@ -271,8 +296,6 @@ public class ClienteService {
                 TitularEntity titular = titularRepository.findByDocumentos_Cpf(dependenteValue.getParentId()).get();
                 titular.getDependentes().forEach(dependenteEntity -> {
                     if (dependenteEntity.getDocumentos().getCpf().equals(cpfDependente)) {
-                        log.info("X-TRID: {} - ", payload.getXtrid(), TITULAR_ATUALIZADO_SUCESSO);
-                        
                         dependenteEntity.getDadosPessoais().setPrimeiroNome(formEdit.primeiroNome());
                         dependenteEntity.getDadosPessoais().setNomeDoMeio(formEdit.nomeDoMeio());
                         dependenteEntity.getDadosPessoais().setSobrenome(formEdit.sobrenome());
@@ -283,16 +306,25 @@ public class ClienteService {
                     }
                 });
                 titularRepository.save(titular);
-                logService.registrarInput(payload.getXtrid(), payload, Boolean.TRUE, DEPENDENTE_ALTERADO_SUCESSO);
-                log.info(DEPENDENTE_ALTERADO_SUCESSO);
 
+                log.info("x-trid: {} | Camada de Servico | editarDependente | Sucesso: {} | Causa: {} |", 
+                    xtrid, 
+                    Boolean.TRUE,
+                    DEPENDENTE_ALTERADO_SUCESSO);
             } else{
-                logService.registrarInput(payload.getXtrid(), payload, Boolean.FALSE, GENERIC_SEM_ALTERACOES);
+                log.warn("x-trid: {} | Camada de Servico | editarDependente | Sucesso: {} | Causa: {} |", 
+                    xtrid, 
+                    Boolean.FALSE,
+                    GENERIC_SEM_ALTERACOES);
                 throw new ClienteNaoEncontradoException(GENERIC_SEM_ALTERACOES);
 
             }
             
         },() -> {
+            log.warn("x-trid: {} | Camada de Servico | editarDependente | Sucesso: {} | Causa: {} |", 
+                    xtrid, 
+                    Boolean.FALSE,
+                    GENERIC_DEPENDENTE_NAO_LOCALIZADO);
             throw new ClienteNaoEncontradoException(GENERIC_DEPENDENTE_NAO_LOCALIZADO);
         });
 
@@ -310,8 +342,8 @@ public class ClienteService {
     }
 
     @Transactional
-    @CacheEvict(value = "cliente", key = "#cpf")
-    public Boolean removerCliente(String cpf) {
+    @Caching(evict = {@CacheEvict(value = "cliente", key = "#cpf")})
+    public Boolean removerCliente(String xtrid, String cpf) {
         Boolean removido = Boolean.FALSE;
         // Verifica se cliente existe
         if(existeCliente(cpf)){
@@ -324,9 +356,13 @@ public class ClienteService {
                 dependenteRepository.deleteAllByParentId(cpf);
                 // Remove o titular
                 titularRepository.delete(titular.get());
+
                 removido = Boolean.TRUE;
 
-                log.info("Este cpf é de um titular, se houver dependentes vinculados todos removidos da base!");
+                log.info("x-trid: {} | Camada de Servico | removerCliente | Sucesso: {} | Causa: {} |", 
+                    xtrid, 
+                    removido,
+                    TITULAR_REMOVER);
             }
 
             if(dependente.isPresent()){
@@ -337,26 +373,37 @@ public class ClienteService {
                 titularMongoEntity.removeDependente(cpf);
                 // Atualiza o titular
                 titularRepository.save(titularMongoEntity);
+
                 removido = Boolean.TRUE;
 
-                log.info("Este cpf é de um dependente e foi removido da base e desvinculado de seu titular!");
+                log.info("x-trid: {} | Camada de Servico | removerCliente | Sucesso: {} | Causa: {} |", 
+                    xtrid, 
+                    removido,
+                    DEPENDENTE_REMOVER);
             }
-
-        }else
-            throw new ClienteNaoEncontradoException("Cliente não encontrado!");
+        }else{
+            log.warn("x-trid: {} | Camada de Servico | removerCliente | Sucesso: {} | Causa: {} |", 
+                    xtrid, 
+                    removido,
+                    GENERIC_CLIENTE_NAO_ENCONTRADO);
+            throw new ClienteNaoEncontradoException(GENERIC_CLIENTE_NAO_ENCONTRADO);
+        }
 
         return removido;
     }
 
     @Transactional
-    public DependenteRecordDTO incluirDependente(PayloadRequestLogWrapper payload, DependenteRecordForm form) {
+    public DependenteRecordDTO incluirDependente(String xtrid, DependenteRecordForm form) {
         // Verificar se o titular existe
         Optional<TitularEntity> titular = titularRepository.findByDocumentos_Cpf(form.parent_id());
         if (titular.isPresent()) {
             // Verificar se o dependente já existe
             Optional<DependenteEntity> dependente = dependenteRepository.findByDocumentos_Cpf(form.cpf());
             if (dependente.isPresent()){
-                logService.registrarInput(payload.getXtrid(), payload, Boolean.FALSE, DEPENDENTE_JA_CADASTRADO);
+                log.warn("x-trid: {} | Camada de Servico | Sucesso: {} | Causa: {} |", 
+                    xtrid, 
+                    Boolean.FALSE,
+                    DEPENDENTE_JA_CADASTRADO);
                 throw new DependenteException(DEPENDENTE_JA_CADASTRADO);
             }
             else {
@@ -368,12 +415,18 @@ public class ClienteService {
 
                 // Precisa salvar o dependente no DependenteEntity
                 dependenteRepository.save(dependenteEntity);
-                logService.registrarInput(payload.getXtrid(), payload, Boolean.TRUE, DEPENDENTE_CADASTRADO_SUCESSO);
-                log.info(DEPENDENTE_CADASTRADO_SUCESSO);
+
+                log.info("x-trid: {} | Camada de Servico | Sucesso: {} | Causa: {} |", 
+                    xtrid, 
+                    Boolean.TRUE,
+                    DEPENDENTE_CADASTRADO_SUCESSO);
                 return updateCacheAndReturnDto(dependenteEntity);
             }
         } else{
-            logService.registrarInput(payload.getXtrid(), payload, Boolean.FALSE, TITULAR_NAO_ENCONTRADO);
+            log.warn("x-trid: {} | Camada de Servico | Sucesso: {} | Causa: {} |", 
+                    xtrid, 
+                    Boolean.FALSE,
+                    TITULAR_NAO_ENCONTRADO);
             throw new ClienteNaoEncontradoException(TITULAR_NAO_ENCONTRADO);
         }
     }

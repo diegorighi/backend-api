@@ -1,0 +1,41 @@
+<configuration>
+
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- Appender para arquivo com rotação -->
+    <appender name="ROLLING_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>agencia-crm-system.log</file>
+
+        <encoder>
+            <pattern>%date{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <!-- Caminho e padrão do arquivo arquivado -->
+            <fileNamePattern>agencia-crm-system.%d{yyyy-MM-dd}.%i.log.zip</fileNamePattern>
+            
+            <!-- Tamanho máximo do arquivo -->
+            <maxFileSize>100MB</maxFileSize>
+            
+            <!-- Número máximo de arquivos de histórico a manter -->
+            <maxHistory>10</maxHistory>
+
+            <!-- Tamanho total máximo de todos os arquivos de log -->
+            <totalSizeCap>1GB</totalSizeCap>
+        </rollingPolicy>
+    </appender>
+
+    <!-- Configuração dos loggers -->
+    <logger name="br.com.agencia.crm.agenciacrm.controllers" level="info" additivity="false">
+        <appender-ref ref="ROLLING_FILE"/>
+    </logger>
+    <logger name="br.com.agencia.crm.agenciacrm.services" level="info" additivity="false">
+        <appender-ref ref="ROLLING_FILE"/>
+    </logger>
+
+    <root level="OFF"/>
+</configuration>
