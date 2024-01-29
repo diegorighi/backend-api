@@ -53,7 +53,7 @@ public class ClienteController {
             @RequestBody @Valid TitularRecordForm form) {
                 
 
-        log.info("====================================================================================");
+        log.info("========================================================================");
         log.info("x-trid: {} | Camada de Controller | Iniciando processo de [CADASTRO DE CLIENTE]",
                 xtrid);
 
@@ -73,7 +73,7 @@ public class ClienteController {
             @RequestParam(value = "pagina", defaultValue = "0") int pagina,
             @RequestParam(value = "tamanho", defaultValue = "50") int tamanho) {
 
-        log.info("====================================================================================");
+        log.info("========================================================================");
         log.info("x-trid: {} | Camada de Controller | Iniciando processo de [LISTAGEM PAGINADA DE CLIENTES]", xtrid);
         PageRequest pageRequest = PageRequest.of(pagina, tamanho, Sort.Direction.ASC, "nome");
         Page<TitularEntity> listaClientes = service.listarClientes(pageRequest);
@@ -87,7 +87,7 @@ public class ClienteController {
         @RequestHeader(value = "x-trid", required = true) String xtrid,
         @PathVariable String cpf) {
 
-        log.info("====================================================================================");
+        log.info("========================================================================");
         log.info("x-trid: {} | Camada de Controller | Iniciando processo de [BUSCA DE CLIENTE POR CPF]", xtrid);
         ClienteDTO cliente = service.buscarPorCPF(cpf);
 
@@ -99,7 +99,7 @@ public class ClienteController {
         @RequestHeader(value = "x-trid", required = true) String xtrid,
         @RequestBody @Valid DependenteRecordForm form) {
        
-        log.info("====================================================================================");
+        log.info("========================================================================");
         log.info("x-trid: {} | Camada de Controller | Iniciando processo de [INCLUSÃO DE DEPENDENTE]", xtrid);
 
         DependenteRecordDTO dependente = service.incluirDependente(xtrid, form);
@@ -116,7 +116,7 @@ public class ClienteController {
             @PathVariable String cpf,
             @RequestBody TitularEditRecordForm formEdit) {
 
-        log.info("====================================================================================");
+        log.info("========================================================================");
         log.info("x-trid: {} | Camada de Controller | Iniciando processo de [EDIÇÃO DO TITULAR]", xtrid);
 
         HashMap<String, Object> alteracoes = service.editarTitular(xtrid, cpf, formEdit);
@@ -133,7 +133,7 @@ public class ClienteController {
         @RequestHeader(value = "x-trid", required = true) String xtrid,
         @PathVariable String cpf) {
 
-        log.info("====================================================================================");
+        log.info("========================================================================");
         log.info("x-trid: {} | Camada de Controller | Iniciando processo de [REMOCAO DE CLIENTE POR CPF]", xtrid);
         Boolean clienteRemovido = service.removerCliente(xtrid, cpf);
 
@@ -150,7 +150,7 @@ public class ClienteController {
             @PathVariable String cpfDependente,
             @RequestBody final DependenteEditRecordForm formEdit) {
 
-        log.info("====================================================================================");
+        log.info("========================================================================");
         log.info("x-trid: {} | Camada de Controller | Inciando processo de [EDIÇÃO DE DEPENDENTE]", xtrid);
         HashMap<String, Object> alteracoes = service.editarDependente(xtrid, cpfDependente, formEdit);
 

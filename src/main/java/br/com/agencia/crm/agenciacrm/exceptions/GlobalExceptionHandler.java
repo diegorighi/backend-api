@@ -33,4 +33,17 @@ public class GlobalExceptionHandler<T> {
         ResponseWrapper<T> response = new ResponseWrapper<T>(null, ex.getMessage(), false);
         return new ResponseEntity<>(response, HttpStatus.CONFLICT);
     }
+
+    @ExceptionHandler(UsuarioNaoEncontradoException.class)
+    public ResponseEntity<ResponseWrapper<T>> handleUsuarioNaoEncontradoException(UsuarioNaoEncontradoException ex) {
+        ResponseWrapper<T> response = new ResponseWrapper<T>(null, ex.getMessage(), false);
+        return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(UsuarioJaExisteException.class)
+    public ResponseEntity<ResponseWrapper<T>> handleUsuarioJaExisteException(UsuarioJaExisteException ex) {
+        ResponseWrapper<T> response = new ResponseWrapper<T>(null, ex.getMessage(), false);
+        return new ResponseEntity<>(response, HttpStatus.CONFLICT);
+    }
+
 }
