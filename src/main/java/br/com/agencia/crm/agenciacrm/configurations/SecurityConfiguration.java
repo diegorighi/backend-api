@@ -30,6 +30,7 @@ public class SecurityConfiguration {
         return http.csrf(csrf -> csrf.disable())
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(req -> {
+                    req.requestMatchers(HttpMethod.GET, "/actuator/**").permitAll();
                     req.requestMatchers(HttpMethod.GET, "/swagger-ui/**").permitAll();
                     req.requestMatchers(HttpMethod.POST, "/oauth").permitAll();
                     req.requestMatchers(HttpMethod.POST, "/usuarios/cadastrar").permitAll();
