@@ -10,8 +10,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
+import br.com.agencia.crm.agenciacrm.domain.entities.UsuarioEntity;
 import br.com.agencia.crm.agenciacrm.exceptions.UsuarioJaExisteException;
-import br.com.agencia.crm.agenciacrm.models.entities.UsuarioEntity;
 import br.com.agencia.crm.agenciacrm.repositories.UsuarioRepository;
 import br.com.agencia.crm.agenciacrm.services.UsuarioService;
 import jakarta.servlet.FilterChain;

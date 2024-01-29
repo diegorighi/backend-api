@@ -16,12 +16,12 @@ import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTCreationException;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 
+import br.com.agencia.crm.agenciacrm.domain.entities.UsuarioEntity;
+import br.com.agencia.crm.agenciacrm.domain.records.dto.TokenDTO;
+import br.com.agencia.crm.agenciacrm.domain.records.dto.UsuarioDTO;
+import br.com.agencia.crm.agenciacrm.domain.records.forms.UsuarioRecordForm;
 import br.com.agencia.crm.agenciacrm.exceptions.ClienteJaCadastradoException;
 import br.com.agencia.crm.agenciacrm.exceptions.UsuarioNaoEncontradoException;
-import br.com.agencia.crm.agenciacrm.models.entities.UsuarioEntity;
-import br.com.agencia.crm.agenciacrm.models.records.dto.TokenDTO;
-import br.com.agencia.crm.agenciacrm.models.records.dto.UsuarioDTO;
-import br.com.agencia.crm.agenciacrm.models.records.forms.UsuarioRecordForm;
 import br.com.agencia.crm.agenciacrm.repositories.UsuarioRepository;
 import lombok.extern.slf4j.Slf4j;
 

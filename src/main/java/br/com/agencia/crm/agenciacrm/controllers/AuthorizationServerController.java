@@ -9,9 +9,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import br.com.agencia.crm.agenciacrm.models.entities.UsuarioEntity;
-import br.com.agencia.crm.agenciacrm.models.records.dto.TokenDTO;
-import br.com.agencia.crm.agenciacrm.models.records.forms.UsuarioRecordForm;
+import br.com.agencia.crm.agenciacrm.domain.entities.UsuarioEntity;
+import br.com.agencia.crm.agenciacrm.domain.records.dto.TokenDTO;
+import br.com.agencia.crm.agenciacrm.domain.records.forms.UsuarioRecordForm;
 import br.com.agencia.crm.agenciacrm.services.UsuarioService;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;

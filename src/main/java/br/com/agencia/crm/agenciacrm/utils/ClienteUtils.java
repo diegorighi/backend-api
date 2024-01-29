@@ -5,25 +5,25 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import br.com.agencia.crm.agenciacrm.models.entities.DependenteEntity;
-import br.com.agencia.crm.agenciacrm.models.entities.TitularEntity;
-import br.com.agencia.crm.agenciacrm.models.enums.EstadoCivilEnum;
-import br.com.agencia.crm.agenciacrm.models.enums.PreferenciaAssentoEnum;
-import br.com.agencia.crm.agenciacrm.models.enums.PreferenciaClasseEnum;
-import br.com.agencia.crm.agenciacrm.models.enums.PreferenciaRefeicaoEnum;
-import br.com.agencia.crm.agenciacrm.models.enums.SexoEnum;
-import br.com.agencia.crm.agenciacrm.models.enums.UfEnum;
-import br.com.agencia.crm.agenciacrm.models.records.dto.ContatoRecordDTO;
-import br.com.agencia.crm.agenciacrm.models.records.dto.DadosPessoaisRecordDTO;
-import br.com.agencia.crm.agenciacrm.models.records.dto.DependenteRecordDTO;
-import br.com.agencia.crm.agenciacrm.models.records.dto.DocumentosRecordDTO;
-import br.com.agencia.crm.agenciacrm.models.records.dto.EnderecoRecordDTO;
-import br.com.agencia.crm.agenciacrm.models.records.dto.PreferenciasRecordDTO;
-import br.com.agencia.crm.agenciacrm.models.records.dto.TitularRecordDTO;
-import br.com.agencia.crm.agenciacrm.models.records.forms.DependenteEditRecordForm;
-import br.com.agencia.crm.agenciacrm.models.records.forms.DependenteRecordForm;
-import br.com.agencia.crm.agenciacrm.models.records.forms.TitularEditRecordForm;
-import br.com.agencia.crm.agenciacrm.models.records.forms.TitularRecordForm;
+import br.com.agencia.crm.agenciacrm.domain.entities.DependenteEntity;
+import br.com.agencia.crm.agenciacrm.domain.entities.TitularEntity;
+import br.com.agencia.crm.agenciacrm.domain.enums.EstadoCivilEnum;
+import br.com.agencia.crm.agenciacrm.domain.enums.PreferenciaAssentoEnum;
+import br.com.agencia.crm.agenciacrm.domain.enums.PreferenciaClasseEnum;
+import br.com.agencia.crm.agenciacrm.domain.enums.PreferenciaRefeicaoEnum;
+import br.com.agencia.crm.agenciacrm.domain.enums.SexoEnum;
+import br.com.agencia.crm.agenciacrm.domain.enums.UfEnum;
+import br.com.agencia.crm.agenciacrm.domain.records.dto.ContatoRecordDTO;
+import br.com.agencia.crm.agenciacrm.domain.records.dto.DadosPessoaisRecordDTO;
+import br.com.agencia.crm.agenciacrm.domain.records.dto.DependenteRecordDTO;
+import br.com.agencia.crm.agenciacrm.domain.records.dto.DocumentosRecordDTO;
+import br.com.agencia.crm.agenciacrm.domain.records.dto.EnderecoRecordDTO;
+import br.com.agencia.crm.agenciacrm.domain.records.dto.PreferenciasRecordDTO;
+import br.com.agencia.crm.agenciacrm.domain.records.dto.TitularRecordDTO;
+import br.com.agencia.crm.agenciacrm.domain.records.forms.DependenteEditRecordForm;
+import br.com.agencia.crm.agenciacrm.domain.records.forms.DependenteRecordForm;
+import br.com.agencia.crm.agenciacrm.domain.records.forms.TitularEditRecordForm;
+import br.com.agencia.crm.agenciacrm.domain.records.forms.TitularRecordForm;
 
 public class ClienteUtils {
 

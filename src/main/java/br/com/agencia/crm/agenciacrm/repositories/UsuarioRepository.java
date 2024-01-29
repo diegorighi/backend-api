@@ -4,7 +4,7 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Repository;
 
-import br.com.agencia.crm.agenciacrm.models.entities.UsuarioEntity;
+import br.com.agencia.crm.agenciacrm.domain.entities.UsuarioEntity;
 
 @Repository
 public interface UsuarioRepository extends MongoRepository<UsuarioEntity, String> {

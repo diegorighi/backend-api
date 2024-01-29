@@ -1,12 +1,5 @@
 package br.com.agencia.crm.agenciacrm.utils;
 
-import br.com.agencia.crm.agenciacrm.models.enums.EstadoCivilEnum;
-import br.com.agencia.crm.agenciacrm.models.enums.PreferenciaAssentoEnum;
-import br.com.agencia.crm.agenciacrm.models.enums.PreferenciaClasseEnum;
-import br.com.agencia.crm.agenciacrm.models.enums.PreferenciaRefeicaoEnum;
-import br.com.agencia.crm.agenciacrm.models.enums.SexoEnum;
-import br.com.agencia.crm.agenciacrm.models.enums.UfEnum;
-import br.com.agencia.crm.agenciacrm.models.records.forms.TitularRecordForm;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
 import jakarta.validation.ValidatorFactory;
@@ -15,6 +8,14 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
+
+import br.com.agencia.crm.agenciacrm.domain.enums.EstadoCivilEnum;
+import br.com.agencia.crm.agenciacrm.domain.enums.PreferenciaAssentoEnum;
+import br.com.agencia.crm.agenciacrm.domain.enums.PreferenciaClasseEnum;
+import br.com.agencia.crm.agenciacrm.domain.enums.PreferenciaRefeicaoEnum;
+import br.com.agencia.crm.agenciacrm.domain.enums.SexoEnum;
+import br.com.agencia.crm.agenciacrm.domain.enums.UfEnum;
+import br.com.agencia.crm.agenciacrm.domain.records.forms.TitularRecordForm;
 
 public class CadastroClienteTest {
 
