@@ -13,6 +13,7 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 public record TitularRecordForm(
@@ -31,6 +32,7 @@ public record TitularRecordForm(
     String sobrenome,
 
     @NotEmpty(message = "A data de nascimento não pode estar vazia")
+    @Pattern(regexp="\\d{2}/\\d{2}/\\d{4}", message = "A data de nascimento deve estar no formato dd/MM/yyyy")
     String dataNascimento,
 
     @NotNull(message = "O sexo não pode estar vazio")
@@ -61,6 +63,7 @@ public record TitularRecordForm(
     String passaporte,
 
     @NotEmpty(message = "A data de vencimento do passaporte não pode estar vazia")
+    @Pattern(regexp="\\d{2}/\\d{2}/\\d{4}", message = "A data de vencimento do passaporte deve estar no formato dd/MM/yyyy")
     String dataVencimentoPassaporte,
 
     @NotEmpty(message = "O email não pode estar vazio")

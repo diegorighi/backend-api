@@ -6,6 +6,7 @@ import br.com.agencia.crm.agenciacrm.domain.enums.EstadoCivilEnum;
 import br.com.agencia.crm.agenciacrm.domain.enums.SexoEnum;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 public record DependenteRecordForm (
@@ -45,6 +46,7 @@ public record DependenteRecordForm (
     String passaporte,
 
     @NotEmpty(message = "A data de vencimento do passaporte não pode estar vazia")
+    @Pattern(regexp="\\d{2}/\\d{2}/\\d{4}", message = "A data de vencimento do passaporte deve estar no formato dd/MM/yyyy")
     String dataVencimentoPassaporte
 ) implements ClienteForm{
 

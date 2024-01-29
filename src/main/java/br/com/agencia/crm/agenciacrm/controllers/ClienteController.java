@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import br.com.agencia.crm.agenciacrm.domain.entities.Cliente;
 import br.com.agencia.crm.agenciacrm.domain.entities.TitularEntity;
@@ -50,7 +51,8 @@ public class ClienteController {
     @PostMapping("/cadastrar")
     public ResponseEntity<ResponseWrapper<TitularRecordDTO>> cadastrarCliente(
             @RequestHeader(value = "x-trid", required = true) String xtrid,
-            @RequestBody @Valid TitularRecordForm form) {
+            @RequestBody @Valid TitularRecordForm form,
+            UriComponentsBuilder uriBuilder) {
                 
 
         log.info("========================================================================");
@@ -59,7 +61,9 @@ public class ClienteController {
 
         Optional<Cliente> cliente = service.cadastroProcesso(xtrid, form);
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(
+        var uri = uriBuilder.path("/cliente/{cpf}").buildAndExpand(form.cpf()).toUri();
+
+        return ResponseEntity.created(uri).body(
                 new ResponseWrapper<TitularRecordDTO>(
                         ClienteUtils.titularEntityToDto((TitularEntity) cliente.get()),
                         "Cliente cadastrado com sucesso!",
