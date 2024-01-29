@@ -19,6 +19,7 @@ import com.auth0.jwt.exceptions.JWTVerificationException;
 import br.com.agencia.crm.agenciacrm.exceptions.ClienteJaCadastradoException;
 import br.com.agencia.crm.agenciacrm.exceptions.UsuarioNaoEncontradoException;
 import br.com.agencia.crm.agenciacrm.models.entities.UsuarioEntity;
+import br.com.agencia.crm.agenciacrm.models.records.dto.TokenDTO;
 import br.com.agencia.crm.agenciacrm.models.records.dto.UsuarioDTO;
 import br.com.agencia.crm.agenciacrm.models.records.forms.UsuarioRecordForm;
 import br.com.agencia.crm.agenciacrm.repositories.UsuarioRepository;
@@ -47,17 +48,27 @@ public class UsuarioService {
     }
 
 
-    public String getToken(UsuarioEntity usuario){
+    public TokenDTO getToken(UsuarioEntity usuario){
         try {
+            log.info("PASSO 4: Formatando DTO");
             var algorithm = Algorithm.HMAC256(secret);
+            Instant expiresAt = dataExpiracao();
 
-            return JWT.create()
-                .withIssuer("AgenciaCRM")
-                .withSubject(usuario.getClientId())
-                .withExpiresAt(dataExpiracao())
-                .sign(algorithm);
+            String token = JWT.create()
+            .withIssuer("AgenciaCRM")
+            .withSubject(usuario.getClientId())
+            .withExpiresAt(expiresAt)
+            .sign(algorithm);
+
+            TokenDTO tokenResponse = new TokenDTO(
+                token,
+                "Grant-Type: password",
+                expiresAt
+            );
+
+        return tokenResponse;
         } catch (JWTCreationException exception){
-            throw new RuntimeException("Erro ao gerar token");
+            throw new UsuarioNaoEncontradoException("Erro ao gerar token");
         }
 
     }

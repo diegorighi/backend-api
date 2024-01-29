@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import br.com.agencia.crm.agenciacrm.models.entities.UsuarioEntity;
+import br.com.agencia.crm.agenciacrm.models.records.dto.TokenDTO;
 import br.com.agencia.crm.agenciacrm.models.records.forms.UsuarioRecordForm;
 import br.com.agencia.crm.agenciacrm.services.UsuarioService;
 import jakarta.validation.Valid;
@@ -33,12 +34,19 @@ public class AuthorizationServerController {
     }
 
     @PostMapping
-    public ResponseEntity<?> getToken(@RequestBody @Valid UsuarioRecordForm form) {
-        
-        log.info("PASSO 1: Iniciando o processo de autenticação");
-        var token = new UsernamePasswordAuthenticationToken(form.clientId(), form.clientSecret());
-        var authenticate = manager.authenticate(token);
+    public ResponseEntity<TokenDTO> getToken(@RequestBody @Valid UsuarioRecordForm form) {
 
-        return ResponseEntity.ok(tokenService.getToken((UsuarioEntity) authenticate.getPrincipal()));
+        log.info("OAuth2 | Authorization Server | Iniciando processo de [VALIDAÇÃO DO JWT]");
+        log.info("PASSO 1: Iniciando o processo de autenticação");
+        var authenticationToken = 
+            new UsernamePasswordAuthenticationToken(form.clientId(), form.clientSecret());
+
+        log.info("PASSO 2: Autenticando o usuário");
+        var authentication = manager.authenticate(authenticationToken);
+
+        log.info("PASSO 3: Gerando o token JWT response");
+        var tokenJWT = tokenService.getToken( (UsuarioEntity) authentication.getPrincipal());
+
+        return ResponseEntity.ok(tokenJWT);
     }
 }
