@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTCreationException;
+import com.auth0.jwt.exceptions.JWTDecodeException;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 
 import br.com.agencia.crm.agenciacrm.domain.entities.UsuarioEntity;
@@ -21,8 +22,12 @@ import br.com.agencia.crm.agenciacrm.domain.records.dto.TokenDTO;
 import br.com.agencia.crm.agenciacrm.domain.records.dto.UsuarioDTO;
 import br.com.agencia.crm.agenciacrm.domain.records.forms.UsuarioRecordForm;
 import br.com.agencia.crm.agenciacrm.exceptions.ClienteJaCadastradoException;
+import br.com.agencia.crm.agenciacrm.exceptions.ClienteNaoEncontradoException;
+import br.com.agencia.crm.agenciacrm.exceptions.TokenJWTInvalidoException;
 import br.com.agencia.crm.agenciacrm.exceptions.UsuarioNaoEncontradoException;
 import br.com.agencia.crm.agenciacrm.repositories.UsuarioRepository;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -37,14 +42,21 @@ public class UsuarioService {
 
     private static String USERNAME_NAO_ENCONTRADO;
     private static String USERNAME_JA_CADASTRADO;
+
+    private Counter authUserErrorCounter;
     
     @Autowired
     public UsuarioService(
         @Value("${username.nao.encontrado}") String usuarioNaoEncontrado,
-        @Value("${username.ja.cadastrado}") String usuarioJaCadastrado
+        @Value("${username.ja.cadastrado}") String usuarioJaCadastrado,
+        MeterRegistry registry
     ){
         UsuarioService.USERNAME_NAO_ENCONTRADO = usuarioNaoEncontrado;
         UsuarioService.USERNAME_JA_CADASTRADO = usuarioJaCadastrado;
+
+        this.authUserErrorCounter = Counter.builder("auth_user_error")
+            .description("Número de erros de autenticação do usuário")
+            .register(registry);
     }
 
 
@@ -77,39 +89,20 @@ public class UsuarioService {
         return LocalDateTime.now().plusHours(1).toInstant(ZoneOffset.of("-03:00"));
     }
 
-    public String getSubject(String tokenJWT) {
-        try {
-                var algoritmo = Algorithm.HMAC256(secret);
-                return JWT.require(algoritmo)
-                                .withIssuer("AgenciaCRM")
-                                .build()
-                                .verify(tokenJWT)
-                                .getSubject();
-        } catch (JWTVerificationException exception) {
-                throw new RuntimeException("Token JWT inválido ou expirado!");
-        }
-}
+    public String getSubject(String tokenJWT) throws JWTDecodeException, JWTVerificationException {
+        var algoritmo = Algorithm.HMAC256(secret);
+
+        return JWT.require(algoritmo)
+                    .withIssuer("AgenciaCRM")
+                    .build()
+                    .verify(tokenJWT)
+                    .getSubject();
+    }
 
     private Optional<UsuarioEntity> getUsuario(@NonNull String clientId){
         return usuarioRepository.findById(clientId);
     }
 
-    private Boolean validateCredentials(@NonNull String clientId, @NonNull String clientSecret){
-        // Chamada ao banco de dados com credenciais informadas
-        Optional<UsuarioEntity> usuarioEntity = usuarioRepository.findById(clientId);
-
-        // Se o usuário existir, verificar se a senha está correta, se não, lança exceção
-        usuarioEntity.ifPresentOrElse((usuario) -> {
-            BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
-            encoder.matches(clientSecret, usuario.getClientSecret());
-        }, () -> {
-            throw new UsuarioNaoEncontradoException(USERNAME_NAO_ENCONTRADO);
-        });
-
-        // Sempre vai ser TRUE, pois se não existir, lança exceção
-        return Boolean.TRUE;
-    }
-    
     public Boolean isTokenValid(String token) {
         return true;
     }

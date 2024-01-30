@@ -65,6 +65,12 @@ public class GlobalExceptionHandler<T> {
         return new ResponseEntity<ResponseWrapper<List<FieldValidationError>>>(response, HttpStatus.BAD_REQUEST);
     }
 
+    @ExceptionHandler(com.auth0.jwt.exceptions.JWTDecodeException.class)
+    public ResponseEntity<ResponseWrapper<T>> handleTokenJWTInvalido(com.auth0.jwt.exceptions.JWTDecodeException ex) {
+        ResponseWrapper<T> response = new ResponseWrapper<T>(null, ex.getMessage(), false);
+        return new ResponseEntity<>(response, HttpStatus.UNAUTHORIZED);
+    }
+
 
     // Record para encapsular o erro de validação do bean
     private record FieldValidationError(String parametro, String mensagem) {

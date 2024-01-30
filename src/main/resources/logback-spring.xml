@@ -6,12 +6,23 @@
         </encoder>
     </appender>
 
+    <!-- Configuração para evitar a impressão de stacktraces de exceções -->
+    <appender name="EXCEPTIONS" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
     <!-- Appender para arquivo com rotação -->
     <appender name="ROLLING_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>agencia-crm-system.log</file>
 
         <encoder>
             <pattern>%date{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n</pattern>
+            <exclusion>
+                <evaluator>
+                    <expression>return event.getThrowableProxy() != null;</expression>
+                </evaluator>
+            </exclusion>
         </encoder>
 
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
@@ -37,7 +48,7 @@
         <appender-ref ref="ROLLING_FILE"/>
     </logger>
 
-    <root level="INFO">
-        <appender-ref ref="ROLLING_FILE" />
-    </root>
+    <logger name="org.springframework" level="ERROR">
+        <appender-ref ref="EXCEPTIONS"/>
+    </logger>
 </configuration>

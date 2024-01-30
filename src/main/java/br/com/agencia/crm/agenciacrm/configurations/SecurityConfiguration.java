@@ -32,6 +32,7 @@ public class SecurityConfiguration {
                 .authorizeHttpRequests(req -> {
                     req.requestMatchers(HttpMethod.GET, "/actuator/**").permitAll();
                     req.requestMatchers(HttpMethod.GET, "/swagger-ui/**").permitAll();
+                    req.requestMatchers(HttpMethod.GET, "/metrics/**").permitAll();
                     req.requestMatchers(HttpMethod.POST, "/oauth").permitAll();
                     req.requestMatchers(HttpMethod.POST, "/usuarios/cadastrar").permitAll();
                     req.anyRequest().authenticated();
