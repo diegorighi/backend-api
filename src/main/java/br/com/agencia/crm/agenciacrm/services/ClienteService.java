@@ -32,6 +32,7 @@ import br.com.agencia.crm.agenciacrm.exceptions.DependenteException;
 import br.com.agencia.crm.agenciacrm.repositories.ClienteRepository;
 import br.com.agencia.crm.agenciacrm.repositories.DependenteClienteRepository;
 import br.com.agencia.crm.agenciacrm.utils.ClienteUtils;
+import io.micrometer.core.instrument.Timer;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -116,6 +117,8 @@ public class ClienteService {
     @Transactional
     public Optional<Cliente> cadastroProcesso(String xtrid, ClienteForm form) {
         // Verifica se cliente já existe na base
+        Timer.Sample sample = Timer.start();
+        
         if (existeCliente(form.getCpf())){
             log.warn("x-trid: {} | Camada de Servico | cadastroProcesso | Sucesso: {} | Causa: {} |", 
                     xtrid, 

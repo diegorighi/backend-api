@@ -32,7 +32,9 @@ import br.com.agencia.crm.agenciacrm.domain.records.forms.TitularEditRecordForm;
 import br.com.agencia.crm.agenciacrm.domain.records.forms.TitularRecordForm;
 import br.com.agencia.crm.agenciacrm.domain.wrapper.ResponseWrapper;
 import br.com.agencia.crm.agenciacrm.services.ClienteService;
+import br.com.agencia.crm.agenciacrm.services.PrometheusMetrics;
 import br.com.agencia.crm.agenciacrm.utils.ClienteUtils;
+import io.micrometer.core.instrument.Timer;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 
@@ -41,128 +43,176 @@ import lombok.extern.slf4j.Slf4j;
 @RequestMapping("/cliente")
 public class ClienteController {
 
-    private ClienteService service;
+        private ClienteService service;
+        private PrometheusMetrics prometheusMetrics;
 
-    // Injeção de dependência do construtor
-    public ClienteController(@Autowired ClienteService service) {
-        this.service = service;
-    }
+        // Injeção de dependência do construtor
+        public ClienteController(@Autowired ClienteService service,
+                                @Autowired PrometheusMetrics prometheusMetrics) {
+                this.service = service;
+                this.prometheusMetrics = prometheusMetrics;
+        }
 
-    @PostMapping("/cadastrar")
-    public ResponseEntity<ResponseWrapper<TitularRecordDTO>> cadastrarCliente(
-            @RequestHeader(value = "x-trid", required = true) String xtrid,
-            @RequestBody @Valid TitularRecordForm form,
-            UriComponentsBuilder uriBuilder) {
-                
+        @PostMapping("/cadastrar")
+        public ResponseEntity<ResponseWrapper<TitularRecordDTO>> cadastrarCliente(
+                @RequestHeader(value = "x-trid", required = true) String xtrid,
+                @RequestBody @Valid TitularRecordForm form,
+                UriComponentsBuilder uriBuilder) {
 
-        log.info("========================================================================");
-        log.info("x-trid: {} | Camada de Controller | Iniciando processo de [CADASTRO DE CLIENTE]",
-                xtrid);
+                log.info("========================================================================");
+                log.info("x-trid: {} | Camada de Controller | Iniciando processo de [CADASTRO DE CLIENTE]", xtrid);
 
-        Optional<Cliente> cliente = service.cadastroProcesso(xtrid, form);
+                Timer.Sample sample = Timer.start();
+                try {
+                        Optional<Cliente> cliente = service.cadastroProcesso(xtrid, form);
+                        var uri = uriBuilder.path("/cliente/{cpf}").buildAndExpand(form.cpf()).toUri();
 
-        var uri = uriBuilder.path("/cliente/{cpf}").buildAndExpand(form.cpf()).toUri();
+                        return ResponseEntity.created(uri).body(
+                        new ResponseWrapper<TitularRecordDTO>(
+                                ClienteUtils.titularEntityToDto((TitularEntity) cliente.get()),
+                                "Cliente cadastrado com sucesso!",
+                                true));
 
-        return ResponseEntity.created(uri).body(
-                new ResponseWrapper<TitularRecordDTO>(
-                        ClienteUtils.titularEntityToDto((TitularEntity) cliente.get()),
-                        "Cliente cadastrado com sucesso!",
-                        true));
+                } finally {
+                        
+                        sample.stop(prometheusMetrics.getUsrReqCadastroClienteAverageTime());
+                        prometheusMetrics.getUsrReqCadastroClienteTotalRequests().increment();
+                        
+                }
+        }
+    
 
-    }
 
-    @GetMapping("/listar")
-    public ResponseEntity<Page<TitularRecordDTO>> listarCliente(
-            @RequestHeader(value = "x-trid", required = true) String xtrid,
-            @RequestParam(value = "pagina", defaultValue = "0") int pagina,
-            @RequestParam(value = "tamanho", defaultValue = "50") int tamanho) {
+        @GetMapping("/listar")
+        public ResponseEntity<Page<TitularRecordDTO>> listarCliente(
+                @RequestHeader(value = "x-trid", required = true) String xtrid,
+                @RequestParam(value = "pagina", defaultValue = "0") int pagina,
+                @RequestParam(value = "tamanho", defaultValue = "50") int tamanho) {
 
-        log.info("========================================================================");
-        log.info("x-trid: {} | Camada de Controller | Iniciando processo de [LISTAGEM PAGINADA DE CLIENTES]", xtrid);
-        PageRequest pageRequest = PageRequest.of(pagina, tamanho, Sort.Direction.ASC, "nome");
-        Page<TitularEntity> listaClientes = service.listarClientes(pageRequest);
+                log.info("========================================================================");
+                log.info("x-trid: {} | Camada de Controller | Iniciando processo de [LISTAGEM PAGINADA DE CLIENTES]", xtrid);
 
-        Page<TitularRecordDTO> listaClientesDTO = listaClientes.map(ClienteUtils::titularEntityToDto);
-        return ResponseEntity.ok(listaClientesDTO);
-    }
+                Timer.Sample sample = Timer.start();
+                try{
+                        PageRequest pageRequest = PageRequest.of(pagina, tamanho, Sort.Direction.ASC, "nome");
+                        Page<TitularEntity> listaClientes = service.listarClientes(pageRequest);
 
-    @GetMapping("/{cpf}")
-    public ResponseEntity<ClienteDTO> buscarCliente(
-        @RequestHeader(value = "x-trid", required = true) String xtrid,
-        @PathVariable String cpf) {
+                        Page<TitularRecordDTO> listaClientesDTO = listaClientes.map(ClienteUtils::titularEntityToDto);
+                        return ResponseEntity.ok(listaClientesDTO);
+                        
+                } finally {
+                        sample.stop(prometheusMetrics.getUsrReqListagemClientesAverageTime());
+                        prometheusMetrics.getUsrReqListagemClientesTotalRequests().increment();
+                }
+        }
 
-        log.info("========================================================================");
-        log.info("x-trid: {} | Camada de Controller | Iniciando processo de [BUSCA DE CLIENTE POR CPF]", xtrid);
-        ClienteDTO cliente = service.buscarPorCPF(cpf);
+        @GetMapping("/{cpf}")
+        public ResponseEntity<ClienteDTO> buscarCliente(
+                @RequestHeader(value = "x-trid", required = true) String xtrid,
+                @PathVariable String cpf) {
 
-        return ResponseEntity.status(200).body(cliente);
-    }
+                log.info("========================================================================");
+                log.info("x-trid: {} | Camada de Controller | Iniciando processo de [BUSCA DE CLIENTE POR CPF]", xtrid);
 
-    @PostMapping("/dependente/incluir")
-    public ResponseEntity<ResponseWrapper<DependenteRecordDTO>> incluirDependente(
-        @RequestHeader(value = "x-trid", required = true) String xtrid,
-        @RequestBody @Valid DependenteRecordForm form) {
-       
-        log.info("========================================================================");
-        log.info("x-trid: {} | Camada de Controller | Iniciando processo de [INCLUSÃO DE DEPENDENTE]", xtrid);
+                Timer.Sample sample = Timer.start();
+                try{
+                        ClienteDTO cliente = service.buscarPorCPF(cpf);
+                        return ResponseEntity.status(200).body(cliente);
+                } finally {
+                        sample.stop(prometheusMetrics.getUsrReqBuscaClienteCPFAverageTime());
+                        prometheusMetrics.getUsrReqBuscaClienteCPFTotalRequests().increment();
+                }
 
-        DependenteRecordDTO dependente = service.incluirDependente(xtrid, form);
-        return ResponseEntity.status(HttpStatus.CREATED).body(
-                new ResponseWrapper<DependenteRecordDTO>(
-                        dependente,
-                        "Dependente cadastrado com sucesso!",
-                        true));
-    }
+        }
 
-    @PatchMapping("/editar/titular/{cpf}")
-    public ResponseEntity<ResponseWrapper<HashMap<String, Object>>> editarTitular(
-            @RequestHeader(value = "x-trid", required = true) String xtrid,
-            @PathVariable String cpf,
-            @RequestBody TitularEditRecordForm formEdit) {
+        @PostMapping("/dependente/incluir")
+        public ResponseEntity<ResponseWrapper<DependenteRecordDTO>> incluirDependente(
+                @RequestHeader(value = "x-trid", required = true) String xtrid,
+                @RequestBody @Valid DependenteRecordForm form) {
+        
+                log.info("========================================================================");
+                log.info("x-trid: {} | Camada de Controller | Iniciando processo de [INCLUSÃO DE DEPENDENTE]", xtrid);
 
-        log.info("========================================================================");
-        log.info("x-trid: {} | Camada de Controller | Iniciando processo de [EDIÇÃO DO TITULAR]", xtrid);
+                Timer.Sample sample = Timer.start();
+                try{
+                        DependenteRecordDTO dependente = service.incluirDependente(xtrid, form);
+                        return ResponseEntity.status(HttpStatus.CREATED).body(
+                                new ResponseWrapper<DependenteRecordDTO>(
+                                        dependente,
+                                        "Dependente cadastrado com sucesso!",
+                                        true));
+                }finally{
+                        sample.stop(prometheusMetrics.getUsrReqInclusaoDependenteAverageTime());
+                        prometheusMetrics.getUsrReqInclusaoDependenteTotalRequests().increment();
+                }
+        }
 
-        HashMap<String, Object> alteracoes = service.editarTitular(xtrid, cpf, formEdit);
+        @PatchMapping("/editar/titular/{cpf}")
+        public ResponseEntity<ResponseWrapper<HashMap<String, Object>>> editarTitular(
+                @RequestHeader(value = "x-trid", required = true) String xtrid,
+                @PathVariable String cpf,
+                @RequestBody TitularEditRecordForm formEdit) {
 
-        return ResponseEntity.ok(
-                new ResponseWrapper<HashMap<String, Object>>(
-                        alteracoes,
-                        "Alterações realizadas com sucesso!",
-                        true));
-    }
+                log.info("========================================================================");
+                log.info("x-trid: {} | Camada de Controller | Iniciando processo de [EDIÇÃO DO TITULAR]", xtrid);
 
-    @DeleteMapping("/excluir/{cpf}")
-    public ResponseEntity<ResponseWrapper<String>> excluirCliente(
-        @RequestHeader(value = "x-trid", required = true) String xtrid,
-        @PathVariable String cpf) {
+                Timer.Sample sample = Timer.start();
+                try{
+                        HashMap<String, Object> alteracoes = service.editarTitular(xtrid, cpf, formEdit);
+                        return ResponseEntity.ok(
+                                new ResponseWrapper<HashMap<String, Object>>(
+                                        alteracoes,
+                                        "Alterações realizadas com sucesso!",
+                                        true));
+                }finally {
+                        sample.stop(prometheusMetrics.getUsrReqEdicaoTitularAverageTime());
+                        prometheusMetrics.getUsrReqEdicaoTitularTotalRequests().increment();
+                }
+        }
 
-        log.info("========================================================================");
-        log.info("x-trid: {} | Camada de Controller | Iniciando processo de [REMOCAO DE CLIENTE POR CPF]", xtrid);
-        Boolean clienteRemovido = service.removerCliente(xtrid, cpf);
+        @DeleteMapping("/excluir/{cpf}")
+        public ResponseEntity<ResponseWrapper<String>> excluirCliente(
+                @RequestHeader(value = "x-trid", required = true) String xtrid,
+                @PathVariable String cpf) {
 
-        return ResponseEntity.status(204).body(new ResponseWrapper<String>(
-                        cpf,
-                        "O Cpf informado foi removido com sucesso!",
-                        clienteRemovido));
-    }
+                log.info("========================================================================");
+                log.info("x-trid: {} | Camada de Controller | Iniciando processo de [REMOCAO DE CLIENTE POR CPF]", xtrid);
 
-    // Editar dependente
-    @PatchMapping("/dependente/editar/{cpfDependente}")
-    public ResponseEntity<ResponseWrapper<HashMap<String, Object>>> editarDependente(
-            @RequestHeader(value = "x-trid", required = true) String xtrid,
-            @PathVariable String cpfDependente,
-            @RequestBody final DependenteEditRecordForm formEdit) {
+                Timer.Sample sample = Timer.start();
+                try{
+                        Boolean clienteRemovido = service.removerCliente(xtrid, cpf);
+                        return ResponseEntity.status(204).body(new ResponseWrapper<String>(
+                                        cpf,
+                                        "O Cpf informado foi removido com sucesso!",
+                                        clienteRemovido));
+                } finally {
+                        sample.stop(prometheusMetrics.getUsrReqExclusaoClienteAverageTime());
+                        prometheusMetrics.getUsrReqExclusaoClienteTotalRequests().increment();
+                }
+        }
 
-        log.info("========================================================================");
-        log.info("x-trid: {} | Camada de Controller | Inciando processo de [EDIÇÃO DE DEPENDENTE]", xtrid);
-        HashMap<String, Object> alteracoes = service.editarDependente(xtrid, cpfDependente, formEdit);
+        // Editar dependente
+        @PatchMapping("/dependente/editar/{cpfDependente}")
+        public ResponseEntity<ResponseWrapper<HashMap<String, Object>>> editarDependente(
+                @RequestHeader(value = "x-trid", required = true) String xtrid,
+                @PathVariable String cpfDependente,
+                @RequestBody final DependenteEditRecordForm formEdit) {
 
-        return ResponseEntity.ok(
-                new ResponseWrapper<HashMap<String, Object>>(
-                        alteracoes,
-                        "Alterações realizadas com sucesso!",
-                        true));
-    }
+                log.info("========================================================================");
+                log.info("x-trid: {} | Camada de Controller | Inciando processo de [EDIÇÃO DE DEPENDENTE]", xtrid);
+
+                Timer.Sample sample = Timer.start();
+                try{
+                        HashMap<String, Object> alteracoes = service.editarDependente(xtrid, cpfDependente, formEdit);
+                        return ResponseEntity.ok(
+                                new ResponseWrapper<HashMap<String, Object>>(
+                                        alteracoes,
+                                        "Alterações realizadas com sucesso!",
+                                        true));
+                } finally {
+                sample.stop(prometheusMetrics.getUsrReqEdicaoDependenteAverageTime());
+                prometheusMetrics.getUsrReqEdicaoDependenteTotalRequests().increment();
+                }
+        }
 
 }
