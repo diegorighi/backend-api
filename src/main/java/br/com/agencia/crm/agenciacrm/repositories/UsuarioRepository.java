@@ -10,5 +10,5 @@ import br.com.agencia.crm.agenciacrm.domain.entities.UsuarioEntity;
 public interface UsuarioRepository extends MongoRepository<UsuarioEntity, String> {
 
     UserDetails findByClientId(String username);
-    
+
 }

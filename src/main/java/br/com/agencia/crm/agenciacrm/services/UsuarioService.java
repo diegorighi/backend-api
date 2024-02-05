@@ -20,6 +20,7 @@ import com.auth0.jwt.exceptions.JWTVerificationException;
 import br.com.agencia.crm.agenciacrm.domain.entities.UsuarioEntity;
 import br.com.agencia.crm.agenciacrm.domain.records.dto.TokenDTO;
 import br.com.agencia.crm.agenciacrm.domain.records.dto.UsuarioDTO;
+import br.com.agencia.crm.agenciacrm.domain.records.forms.UsuarioLoginForm;
 import br.com.agencia.crm.agenciacrm.domain.records.forms.UsuarioRecordForm;
 import br.com.agencia.crm.agenciacrm.exceptions.ClienteJaCadastradoException;
 import br.com.agencia.crm.agenciacrm.exceptions.ClienteNaoEncontradoException;
@@ -132,6 +133,22 @@ public class UsuarioService {
 
         log.info("PASSO 5: Retornando DTO");
         return new UsuarioDTO(form.nomeCompleto(), form.clientId());
+
+    }
+
+    public Boolean login(UsuarioLoginForm form) {
+        Optional<UsuarioEntity> usuario = usuarioRepository.findById(form.clientId());
+
+        if(usuario.isEmpty()) {
+            authUserErrorCounter.increment();
+            throw new UsuarioNaoEncontradoException(USERNAME_NAO_ENCONTRADO);
+        }
+
+        BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
+        if(encoder.matches(form.clientSecret(), usuario.get().getClientSecret())) return true;
+
+        authUserErrorCounter.increment();
+        return false;
 
     }
 

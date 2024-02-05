@@ -33,6 +33,7 @@ public class SecurityConfiguration {
                     req.requestMatchers(HttpMethod.GET, "/metrics/**").permitAll();
                     req.requestMatchers(HttpMethod.POST, "/oauth").permitAll();
                     req.requestMatchers(HttpMethod.POST, "/usuarios/cadastrar").permitAll();
+                    req.requestMatchers(HttpMethod.POST, "/usuarios/login").permitAll();
                     req.anyRequest().authenticated();
                 })
                 .addFilterBefore(securityFilters, UsernamePasswordAuthenticationFilter.class)

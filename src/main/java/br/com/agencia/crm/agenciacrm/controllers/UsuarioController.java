@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import br.com.agencia.crm.agenciacrm.domain.records.dto.UsuarioDTO;
+import br.com.agencia.crm.agenciacrm.domain.records.forms.UsuarioLoginForm;
 import br.com.agencia.crm.agenciacrm.domain.records.forms.UsuarioRecordForm;
 import br.com.agencia.crm.agenciacrm.domain.wrapper.ResponseWrapper;
 import br.com.agencia.crm.agenciacrm.services.UsuarioService;
@@ -47,6 +48,11 @@ public class UsuarioController {
             UsuarioController.USERNAME_CADASTRADO_SUCESSO + ": " + form.nomeCompleto(), 
             Boolean.TRUE)
         );
+    }
+
+    @PostMapping("/login")
+    public Boolean fazerLogin(@RequestBody UsuarioLoginForm form) {
+        return service.login(form);
     }
     
 }
